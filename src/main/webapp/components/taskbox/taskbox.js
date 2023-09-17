@@ -6,10 +6,10 @@ template.innerHTML = `
        <!-- Modal content -->
         <span id="closeModal">&times;</span>
         <div>
-            <div>Title:</div><div><input type="text" size="25" maxlength="80" placeholder="Task title" autofocus/></div>
+            <div>Title:</div><div><input id="taskTitle" type="text" size="25" maxlength="80" placeholder="Task title" autofocus/></div>
             <div>Status:</div><div><select id="selectStatus"></select></div>
         </div>
-        <p><button type="submit">Add task</button></p>
+        <p><button id="submitTaskButton" type="submit">Add task</button></p>
      </dialog>`;
 
 /**
@@ -65,9 +65,19 @@ class TaskBox extends HTMLElement {
      * @param {function} callback
      */
     newtaskCallback(callback) {
-    /**
-     * Fill inn rest of code
-     */
+		
+		const taskTitleElement = this.shadowRoot.querySelector('#taskTitle');
+		const selectStatusElement = this.shadowRoot.querySelector('#selectStatus');
+		
+		const title = taskTitleElement.value;
+		const status = selectStatusElement.value;
+		
+		let task = {
+			title: title,
+			status: status
+		};
+		
+		callback(task);
     }
 
     /**

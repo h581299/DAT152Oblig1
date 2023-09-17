@@ -30,6 +30,7 @@ class TaskView extends HTMLElement {
 		shadow.appendChild(content);
 
 		this.taskBox = shadow.querySelector('task-box');
+		this.taskList = shadow.querySelector('task-list');
 		
 		this.newTaskButton = shadow.querySelector('#newTaskButton');
 		
@@ -37,19 +38,61 @@ class TaskView extends HTMLElement {
             this.taskBox.show();
         });
         
+        const submitTaskButton = this.taskBox.shadowRoot.querySelector('#submitTaskButton');
+
+		submitTaskButton.addEventListener('click', () => {
+            this.taskBox.newtaskCallback(
+				(task) => {
+					console.log(`Have '${task.title}' with status ${task.status}.`);
+					addNewTask(this.getAttribute("data-serviceurl"), task);
+				}
+			);
+        });
         
+        getAvailableStatuses(this.getAttribute("data-serviceurl"), this.taskBox);
+        getAllTasks(this.getAttribute("data-serviceurl"), this.taskList);
         
-        this.taskBox.setStatuseslist(["WATING","ACTIVE","DONE"]);
-        
-        requestData();
-        
-        async function requestData () {
-			console.log('trying...');
+        async function getAvailableStatuses(url, taskBox) {
 			try {
-				const response = await fetch ("../TaskServices/api/services/allstatuses", { method : "GET" });
-				console.log(`Got response from server: ${ JSON.stringify(response) }`);
+				const response = await fetch (url + '/allstatuses', { method : "GET" });
+				
+				if (response.ok) {
+					const data = await response.json();
+					taskBox.setStatuseslist(data.allstatuses);
+				}
 			} catch (e) {
-				console.log(`Got error ${e. message }. `);
+				console.log(`Got error ${e. message }.`);
+			}
+		}
+		
+		async function addNewTask(url, task) {
+			try {
+				const response = await fetch (url + '/task', { 
+					method : "POST", 
+					headers: { "Content-Type": "application/json; charset=utf-8" },
+					body: JSON.stringify(task)
+				});
+								
+				if (response.ok) {
+					const data = await response.json();
+					console.log(data);
+				}
+			} catch (e) {
+				console.log(`Got error ${e. message }.`);
+			}
+		}
+		
+		async function getAllTasks(url, taskList) {
+			try {
+				const response = await fetch(url + '/tasklist', { method: "GET"});
+				
+				if (response.ok) {
+					const data = await response.json();
+					
+					taskList.createAllTasks(data.tasks);
+				}
+			} catch (e) {
+				console.log(`Got error ${e. message }.`);
 			}
 		}
     }

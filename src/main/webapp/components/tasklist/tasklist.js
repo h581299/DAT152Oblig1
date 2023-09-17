@@ -45,11 +45,7 @@ class TaskList extends HTMLElement {
 			    const tableContent = tasktable.content.cloneNode(true);
 			    taskListElement.appendChild(tableContent);
 			    
-			    const tableBodyElement = shadow.querySelector('#tableBody');
-			    const rowContent = taskrow.content.cloneNode(true);
-				tableBodyElement.appendChild(rowContent);
 
-				
         }
 
         /**
@@ -124,6 +120,27 @@ class TaskList extends HTMLElement {
          * Fill inn rest of code
          */
         }
+        
+        createAllTasks(tasks) {
+			console.log(tasks);
+			const tableBodyElement = this.shadowRoot.querySelector('#tableBody');
+			let rowContent = null;
+			let tdElements = null;
+			
+			for (var key in tasks) {
+			    rowContent = taskrow.content.cloneNode(true);
+				tableBodyElement.appendChild(rowContent);
+				
+				tdElements = rowContent.querySelectorAll('td');
+				console.log(tdElements);
+				
+				if (tdElements.length >= 2) {
+			    	tdElements[0].innerHTML = tasks[key].title;
+			    	tdElements[1].innerHTML = tasks[key].status;
+			    }
+				
+			}
+		}
 }
 
 customElements.define('task-list', TaskList);
