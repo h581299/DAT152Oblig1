@@ -55,16 +55,23 @@ class TaskList extends HTMLElement {
         setStatuseslist(allstatuses) {
 			let selects = this.shadowRoot.querySelectorAll('select');
 			let option = null;
-			
+						
 			for (var i in selects) {
-				for (var j in allstatuses) {
-					option = document.createElement("option");
-					option.value = j + 1;
-					option.textContent = allstatuses[j];
+				if (typeof selects[i] == "object") {
+					while (selects[i].childNodes.length > 2) {
+						selects[i].removeChild(selects[i].lastChild);
+					}
+					if (typeof selects[i] == "object") {
 					
-					selects[i].appendChild(option);
+						for (var j in allstatuses) {
+							option = document.createElement("option");
+							option.textContent = allstatuses[j];
+							
+							selects[i].appendChild(option);
+						}
+					}
 				}
-			}
+        	}
         }
 
         /**
@@ -78,6 +85,7 @@ class TaskList extends HTMLElement {
 			
 			for (var key in selectElements) {
 				if (typeof selectElements[key] == "object") {
+					
 					selectElements[key].addEventListener('change', (self) => {
 						task.id = self.target.id.slice(7);
 						task.status = self.target.options[self.target.selectedIndex].textContent;
@@ -124,6 +132,8 @@ class TaskList extends HTMLElement {
 			
 			const trElement = rowContent.querySelector("tr");
 			const tdElements = trElement.querySelectorAll('td');
+			
+			console.log(task);
 			
 			if (tdElements.length >= 2) {
 		    	tdElements[0].innerHTML = task.title;

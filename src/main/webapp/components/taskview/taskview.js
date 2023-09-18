@@ -40,7 +40,7 @@ class TaskView extends HTMLElement {
         
         const submitTaskButton = this.taskBox.shadowRoot.querySelector('#submitTaskButton');
 
-        handleApiCalls(this.getAttribute("data-serviceurl"), this.taskBox, this.taskList);
+        handleApiCalls(this.getAttribute("data-serviceurl"), this.taskBox, this.taskList, shadow);
 
         /**
          * Handle all async functions that requires API or need to happen in order
@@ -49,9 +49,13 @@ class TaskView extends HTMLElement {
 		 * @param {TaskBox} taskBox
 		 * @param {TaskList} taskList
          */
-		async function handleApiCalls(url, taskBox, taskList) {
+		async function handleApiCalls(url, taskBox, taskList, shadow) {
 			await getAllTasks(url, taskList);
-        	await setAvailableStatuses(url, taskBox, taskList);
+			shadow.querySelector('#message').innerHTML = "Tasks succesfully recieved from server.";
+			
+        	const statuses = await getAvailableStatuses(url, taskBox, taskList);
+        	taskBox.setStatuseslist(statuses.allstatuses);
+			taskList.setStatuseslist(statuses.allstatuses);
         	        	
         	await handleTasklistStatusChangeCallback(url, taskList);
         	await handleTasklistRemoveButtonCallback(url, taskList);
@@ -70,8 +74,14 @@ class TaskView extends HTMLElement {
 	            taskBox.newtaskCallback(
 					async (task) => {
 						console.log(`Have '${task.title}' with status ${task.status}.`);
-						addNewTask(url, task, taskList);
-						taskList.showTask(task);
+						
+						let newTask = await addNewTask(url, task, taskList);
+						taskList.showTask(newTask.task);
+						
+						const statuses = await getAvailableStatuses(url);
+						taskList.setStatuseslist(statuses.allstatuses);
+
+						handleTasklistStatusChangeCallback(url, taskList);
 						taskBox.close();
 					}
 				);
@@ -80,21 +90,18 @@ class TaskView extends HTMLElement {
 		}
         
         /**
-         * Handles getting the available statuses and providing them for taskBox and taskList to
-		 * set in their appropiate elements.
+         * Handles getting the available statuses from the API
          * @public
          * @param {String} url
-		 * @param {TaskBox} taskBox
-		 * @param {TaskList} taskList
+		 * @return {Object} statuses
          */
-        async function setAvailableStatuses(url, taskBox, taskList) {
+        async function getAvailableStatuses(url) {
 			try {
 				const response = await fetch (url + '/allstatuses', { method : "GET" });
 				
 				if (response.ok) {
-					const data = await response.json();
-					taskBox.setStatuseslist(data.allstatuses);
-					taskList.setStatuseslist(data.allstatuses);
+					const statuses = await response.json();
+					return statuses;
 				}
 			} catch (e) {
 				console.log(`Got error ${e. message }.`);
@@ -106,6 +113,8 @@ class TaskView extends HTMLElement {
          * @public
          * @param {String} url
 		 * @param {Object} task
+		 * 
+		 * @return {Object} data
          */
 		async function addNewTask(url, task) {
 			try {
@@ -117,7 +126,7 @@ class TaskView extends HTMLElement {
 								
 				if (response.ok) {
 					const data = await response.json();
-					console.log(data);
+					return data;
 				}
 			} catch (e) {
 				console.log(`Got error ${e. message }.`);
