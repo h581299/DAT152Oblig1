@@ -18,7 +18,7 @@ taskrow.innerHTML = `
         <td></td>
         <td></td>
         <td>
-            <select>
+            <select class="selectOptions">
                 <option value="0" selected>&lt;Modify&gt;</option>
             </select>
         </td>
@@ -53,9 +53,18 @@ class TaskList extends HTMLElement {
          * @param {Array} list with all possible task statuses
          */
         setStatuseslist(allstatuses) {
-        /**
-         * Fill inn rest of code
-         */
+			let selects = this.shadowRoot.querySelectorAll('select');
+			let option = null;
+			
+			for (var i in selects) {
+				for (var j in allstatuses) {
+					option = document.createElement("option");
+					option.value = j + 1;
+					option.textContent = allstatuses[j];
+					
+					selects[i].appendChild(option);
+				}
+			}
         }
 
         /**
@@ -64,9 +73,23 @@ class TaskList extends HTMLElement {
          * @param {function} callback
          */
         changestatusCallback(callback) {
-        /**
-         * Fill inn rest of code
-         */
+			const selectElements = this.shadowRoot.querySelectorAll('select');
+			let task = {};
+			
+			for (var key in selectElements) {
+				if (typeof selectElements[key] == "object") {
+					selectElements[key].addEventListener('change', (self) => {
+						task.id = self.target.id.slice(7);
+						task.status = self.target.options[self.target.selectedIndex].textContent;
+						
+						if (task != undefined) {
+							callback(task);
+						}
+					});
+				}
+			}
+
+			callback();
         }
 
         /**
@@ -75,9 +98,18 @@ class TaskList extends HTMLElement {
          * @param {function} callback
          */
         deletetaskCallback(callback) {
-        /**
-         * Fill inn rest of code
-         */
+			const buttonElements = this.shadowRoot.querySelectorAll('button');
+			let task = null;
+			
+			for (var key in buttonElements) {
+				if (typeof buttonElements[key] == "object") {
+					buttonElements[key].addEventListener('click', (self) => {
+						task = self.target.id.slice(7);
+						
+						callback(task);
+					});
+				}
+			}
         }
 
         /**
@@ -86,9 +118,23 @@ class TaskList extends HTMLElement {
          * @param {Object} task - Object representing a task
          */
         showTask(task) {
-        /**
-         * Fill inn rest of code
-         */
+			const tableBodyElement = this.shadowRoot.querySelector('#tableBody');
+			
+			const rowContent = taskrow.content.cloneNode(true);
+			
+			const trElement = rowContent.querySelector("tr");
+			const tdElements = trElement.querySelectorAll('td');
+			
+			if (tdElements.length >= 2) {
+		    	tdElements[0].innerHTML = task.title;
+		    	tdElements[1].innerHTML = task.status;
+		    }
+		    
+		    trElement.id = "tableRow-" + task.id;
+		    trElement.querySelector("select").id = "select-" + task.id;
+		    trElement.querySelector("button").id = "button-" + task.id;
+		    
+		    tableBodyElement.insertBefore(rowContent, tableBodyElement.firstChild);
         }
 
         /**
@@ -96,9 +142,13 @@ class TaskList extends HTMLElement {
          * @param {Object} task - Object with attributes {'id':taskId,'status':newStatus}
          */
         updateTask(task) {
-        /**
-         * Fill inn rest of code
-         */
+			const trElement = this.shadowRoot.querySelector("#tableRow-" + task.id);
+			
+			const tdElements = trElement.querySelectorAll('td');
+				
+			if (tdElements.length >= 2) {
+		    	tdElements[1].innerHTML = task.status;
+		    }
         }
 
         /**
@@ -106,9 +156,9 @@ class TaskList extends HTMLElement {
          * @param {Integer} task - ID of task to remove
          */
         removeTask(id) {
-        /**
-         * Fill inn rest of code
-         */
+			const trElement = this.shadowRoot.querySelector("#tableRow-" + id);
+			
+			trElement.remove();
         }
 
         /**
@@ -116,28 +166,38 @@ class TaskList extends HTMLElement {
          * @return {Number} - Number of tasks on display in view
          */
         getNumtasks() {
-        /**
-         * Fill inn rest of code
-         */
+			const num = this.shadowRoot.querySelectorAll("tr").length;
+
+			return num;
         }
         
+        /**
+         * Create one row for each task in the table using the html templates provided
+         * @public
+         * @param {Object} tasks
+         */
         createAllTasks(tasks) {
-			console.log(tasks);
 			const tableBodyElement = this.shadowRoot.querySelector('#tableBody');
 			let rowContent = null;
 			let tdElements = null;
+			let trElement = null;
 			
 			for (var key in tasks) {
 			    rowContent = taskrow.content.cloneNode(true);
-				tableBodyElement.appendChild(rowContent);
-				
-				tdElements = rowContent.querySelectorAll('td');
-				console.log(tdElements);
+
+				trElement = rowContent.querySelector("tr");
+				tdElements = trElement.querySelectorAll('td');
 				
 				if (tdElements.length >= 2) {
 			    	tdElements[0].innerHTML = tasks[key].title;
 			    	tdElements[1].innerHTML = tasks[key].status;
 			    }
+			    
+			    trElement.id = "tableRow-" + tasks[key].id;
+			    trElement.querySelector("select").id = "select-" + tasks[key].id;
+			    trElement.querySelector("button").id = "button-" + tasks[key].id;
+			    
+			    tableBodyElement.appendChild(rowContent);
 				
 			}
 		}

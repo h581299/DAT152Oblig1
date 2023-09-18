@@ -40,31 +40,73 @@ class TaskView extends HTMLElement {
         
         const submitTaskButton = this.taskBox.shadowRoot.querySelector('#submitTaskButton');
 
-		submitTaskButton.addEventListener('click', () => {
-            this.taskBox.newtaskCallback(
-				(task) => {
-					console.log(`Have '${task.title}' with status ${task.status}.`);
-					addNewTask(this.getAttribute("data-serviceurl"), task);
-				}
-			);
-        });
+        handleApiCalls(this.getAttribute("data-serviceurl"), this.taskBox, this.taskList);
+
+        /**
+         * Handle all async functions that requires API or need to happen in order
+         * @public
+         * @param {String} url
+		 * @param {TaskBox} taskBox
+		 * @param {TaskList} taskList
+         */
+		async function handleApiCalls(url, taskBox, taskList) {
+			await getAllTasks(url, taskList);
+        	await setAvailableStatuses(url, taskBox, taskList);
+        	        	
+        	await handleTasklistStatusChangeCallback(url, taskList);
+        	await handleTasklistRemoveButtonCallback(url, taskList);
+        	await handleNewTaskAdded(url, taskBox, taskList);
+		}
+		
+        /**
+         * Handle adding a eventlistener which adds new tasks to the db and the table
+         * @public
+         * @param {String} url
+		 * @param {TaskBox} taskBox
+		 * @param {TaskList} taskList
+         */
+		async function handleNewTaskAdded(url, taskBox, taskList) {
+			submitTaskButton.addEventListener('click', () => {
+	            taskBox.newtaskCallback(
+					async (task) => {
+						console.log(`Have '${task.title}' with status ${task.status}.`);
+						addNewTask(url, task, taskList);
+						taskList.showTask(task);
+						taskBox.close();
+					}
+				);
+	        });
+	        
+		}
         
-        getAvailableStatuses(this.getAttribute("data-serviceurl"), this.taskBox);
-        getAllTasks(this.getAttribute("data-serviceurl"), this.taskList);
-        
-        async function getAvailableStatuses(url, taskBox) {
+        /**
+         * Handles getting the available statuses and providing them for taskBox and taskList to
+		 * set in their appropiate elements.
+         * @public
+         * @param {String} url
+		 * @param {TaskBox} taskBox
+		 * @param {TaskList} taskList
+         */
+        async function setAvailableStatuses(url, taskBox, taskList) {
 			try {
 				const response = await fetch (url + '/allstatuses', { method : "GET" });
 				
 				if (response.ok) {
 					const data = await response.json();
 					taskBox.setStatuseslist(data.allstatuses);
+					taskList.setStatuseslist(data.allstatuses);
 				}
 			} catch (e) {
 				console.log(`Got error ${e. message }.`);
 			}
 		}
 		
+        /**
+         * Handle the API request to add the new task to the db
+         * @public
+         * @param {String} url
+		 * @param {Object} task
+         */
 		async function addNewTask(url, task) {
 			try {
 				const response = await fetch (url + '/task', { 
@@ -82,6 +124,13 @@ class TaskView extends HTMLElement {
 			}
 		}
 		
+        /**
+         * Handle the API request to get the Tasks and calling TaskList to create the html
+		 * elements with the task details
+         * @public
+         * @param {String} url
+		 * @param {TaskList} taskList
+         */
 		async function getAllTasks(url, taskList) {
 			try {
 				const response = await fetch(url + '/tasklist', { method: "GET"});
@@ -94,6 +143,63 @@ class TaskView extends HTMLElement {
 			} catch (e) {
 				console.log(`Got error ${e. message }.`);
 			}
+		}
+		
+        /**
+         * Handle the callback for change of a task's status.
+         * @public
+         * @param {String} url
+		 * @param {TaskList} taskList
+         */
+		async function handleTasklistStatusChangeCallback(url, taskList) {
+			taskList.changestatusCallback(
+				async (task) => {
+					const taskStatus = { "status": task.status };
+					try {
+						const response = await fetch (url + '/task/' + task.id, { 
+							method : "PUT", 
+							headers: { "Content-Type": "application/json; charset=utf-8" },
+							body: JSON.stringify(taskStatus)
+						});
+										
+						if (response.ok) {
+							const data = await response.json();
+							console.log(data);
+						}
+					} catch (e) {
+						console.log(`Got error ${e. message }.`);
+					}
+					
+					taskList.updateTask(task);
+				}
+			);
+		}
+		
+        /**
+         * Handle the call for removal of a task from the list and db
+         * @public
+         * @param {String} url
+		 * @param {TaskList} taskList
+         */
+		async function handleTasklistRemoveButtonCallback(url, taskList) {
+			taskList.deletetaskCallback(
+				async (task) => {
+					try {
+						const response = await fetch (url + '/task/' + task, { 
+							method : "DELETE", 
+						});
+										
+						if (response.ok) {
+							const data = await response.json();
+							console.log(data);
+						}
+					} catch (e) {
+						console.log(`Got error ${e. message }.`);
+					}
+					
+					taskList.removeTask(task);
+				}
+			)
 		}
     }
 }
